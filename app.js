@@ -1,17 +1,20 @@
-import {setupNotifications} from './notifications.js?v=20261112-push2';
+import {monthCells,shiftMonth} from './calendar.js?v=20261118-month';
+import {setupNotifications} from './notifications.js?v=20261118-month';
 import {blockStart} from './notification-logic.js';
 const notifications=setupNotifications();
 import {locationButton,setupLocationMap} from './location-map.js';
 const closeLocationMap=setupLocationMap();
-import {iso,addDays,monday,filterEvents,ics,isMethodicalEvent,isMakeupEvent,isReplacedEvent,methodicalEventLabel,makeupTitle,replacementTitle,nextMethodicalEvent,methodicalWarning} from './logic.js?v=20261112-push2';
+import {iso,addDays,monday,filterEvents,ics,isMethodicalEvent,isMakeupEvent,isReplacedEvent,methodicalEventLabel,makeupTitle,replacementTitle,nextMethodicalEvent,methodicalWarning} from './logic.js?v=20261118-month';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const dateObj=s=>new Date(s+'T12:00:00');
 const format=(s,opts)=>dateObj(s).toLocaleDateString('pl-PL',opts);
 const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Warsaw'}).format(new Date());
-let data,selection,day=today;
+let data,selection,day=today,calendarView='week';
+try{if(localStorage.getItem('wfplan.calendarView')==='month')calendarView='month';}catch{}
 try{selection=JSON.parse(localStorage.getItem('wfplan.selection'))||{};}catch{selection={};}
 const url=new URL(location.href);
+if(['week','month'].includes(url.searchParams.get('view')))calendarView=url.searchParams.get('view');
 for(const k of ['semester','company','platoon','subgroup'])if(url.searchParams.has(k))selection[k]=url.searchParams.get(k);
 if(/^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get('date')||'')&&!isNaN(dateObj(url.searchParams.get('date'))))day=url.searchParams.get('date');
 function options(id,items,value){$(id).innerHTML=items.map(x=>`<option value="${esc(x.value)}">${esc(x.label)}</option>`).join('');$(id).value=items.some(x=>String(x.value)===String(value))?value:items[0]?.value||'';return $(id).value;}
@@ -37,16 +40,23 @@ function card(e){const lesson=data.lessons[e.lesson],loc=data.locations[e.locati
 function render(){
  notifications.updateSelection(selection,data);
  closeLocationMap();
- const sem=data.semesters.find(x=>x.id===selection.semester),all=selected(),onDay=all.filter(e=>e.date===day),start=monday(day);
- try{localStorage.setItem('wfplan.selection',JSON.stringify(selection));}catch{}
- const u=new URL(location.href);for(const [k,v] of Object.entries({...selection,date:day}))u.searchParams.set(k,v);history.replaceState(null,'',u);
+ const sem=data.semesters.find(x=>x.id===selection.semester),all=selected(),onDay=all.filter(e=>e.date===day),start=monday(day),isMonth=calendarView==='month';
+ try{localStorage.setItem('wfplan.selection',JSON.stringify(selection));localStorage.setItem('wfplan.calendarView',calendarView);}catch{}
+ const u=new URL(location.href);for(const [k,v] of Object.entries({...selection,date:day,view:calendarView}))u.searchParams.set(k,v);history.replaceState(null,'',u);
  $('warning').hidden=!sem.warning;$('warning').textContent=sem.warning;
  $('group-label').textContent=selection.company?`${selection.platoon}. PLUTON / ${selection.company}. KOMPANIA`:'PLAN NIEUDOSTĘPNIONY';
  $('month-label').textContent=format(day,{month:'long',year:'numeric'});
  $('day-label').textContent=format(day,{weekday:'long',day:'numeric',month:'long'});
  $('date').value=day;
  $('day-count').textContent=onDay.length?`${onDay.length} ${onDay.length===1?'wpis':'wpisy'}`:'Brak wpisów';
- $('week').innerHTML=Array.from({length:7},(_,i)=>{const d=addDays(start,i),dayEvents=all.filter(e=>e.date===d),count=dayEvents.length,dayMethodical=dayEvents.find(isMethodicalEvent);const marker=dayMethodical?`<span class="week-im${isMakeupEvent(dayMethodical)?' week-im-makeup':isReplacedEvent(dayMethodical)?' week-im-replaced':''}" title="${esc(methodicalEventLabel(dayMethodical))}" aria-hidden="true">IM</span>`:'<i class="dot"></i>'.repeat(Math.min(count,3));return `<button class="${d===day?'active':''} ${d===today?'today':''}" data-day="${d}" aria-label="${esc(format(d,{weekday:'long',day:'numeric',month:'long'}))}, ${count} wpisów${dayMethodical?', '+esc(methodicalEventLabel(dayMethodical)):''}" aria-pressed="${d===day}"><span>${format(d,{weekday:'short'}).replace('.','')}</span><span class="number">${dateObj(d).getDate()}</span><span class="dots">${marker}</span></button>`;}).join('');
+ const cells=isMonth?monthCells(day):Array.from({length:7},(_,i)=>addDays(start,i));
+ const weekdays=['pon','wt','śr','czw','pt','sob','niedz'];
+ $('week').className='week'+(isMonth?' month-view':'');
+ $('week').setAttribute('aria-label',isMonth?'Dni miesiąca, '+format(day,{month:'long',year:'numeric'}):'Dni tygodnia');
+ for(const view of ['week','month'])$('view-'+view).setAttribute('aria-pressed',String(calendarView===view));
+ $('prev').setAttribute('aria-label',isMonth?'Poprzedni miesiąc':'Poprzedni tydzień');
+ $('next').setAttribute('aria-label',isMonth?'Następny miesiąc':'Następny tydzień');
+ $('week').innerHTML=(isMonth?weekdays.map(d=>`<span class="month-weekday" aria-hidden="true">${d}</span>`).join(''):'')+cells.map(d=>{if(!d)return '<span class="month-empty" aria-hidden="true"></span>';const dayEvents=all.filter(e=>e.date===d),count=dayEvents.length,dayMethodical=dayEvents.find(isMethodicalEvent);const marker=dayMethodical?`<span class="week-im${isMakeupEvent(dayMethodical)?' week-im-makeup':isReplacedEvent(dayMethodical)?' week-im-replaced':''}" title="${esc(methodicalEventLabel(dayMethodical))}" aria-hidden="true">IM</span>`:'<i class="dot"></i>'.repeat(Math.min(count,3));return `<button class="${d===day?'active':''} ${d===today?'today':''}" data-day="${d}" aria-label="${esc(format(d,{weekday:'long',day:'numeric',month:'long'}))}, ${count} wpisów${dayMethodical?', '+esc(methodicalEventLabel(dayMethodical)):''}" aria-pressed="${d===day}">${isMonth?'':`<span>${format(d,{weekday:'short'}).replace('.','')}</span>`}<span class="number">${dateObj(d).getDate()}</span><span class="dots">${marker}</span></button>`;}).join('');
  $('week').querySelectorAll('button').forEach(b=>b.onclick=()=>{day=b.dataset.day;render();});
  const later=all.find(e=>e.date>day);
  $('events').innerHTML=onDay.length?onDay.map(card).join(''):`<div class="empty"><div class="empty-icon">↗</div><h3>${selection.semester==='summer-2027'?'Czekamy na nowy rozkład':'Na ten dzień nie ma wpisów'}</h3>${selection.semester==='summer-2027'?'Przesłany arkusz letni dotyczy poprzedniego roku.':day<sem.start||day>sem.end?'Ta data znajduje się poza zakresem wybranego semestru.':'Wybierz inny dzień lub przejdź do kolejnych zajęć.'}${later?'<br><button id="next-event">Przejdź do kolejnych zajęć →</button>':''}</div>`;
@@ -66,7 +76,8 @@ function render(){
 }
 $('semester').onchange=()=>choose(true);
 for(const key of ['company','platoon','subgroup'])$(key).onchange=()=>{selection[key]=$(key).value;choose();};
-$('prev').onclick=()=>{day=addDays(day,-7);render();};$('next').onclick=()=>{day=addDays(day,7);render();};$('today').onclick=()=>{day=today;render();};$('date').onchange=()=>{if($('date').value){day=$('date').value;render();}};
+for(const view of ['week','month'])$('view-'+view).onclick=()=>{calendarView=view;render();};
+$('prev').onclick=()=>{day=calendarView==='month'?shiftMonth(day,-1):addDays(day,-7);render();};$('next').onclick=()=>{day=calendarView==='month'?shiftMonth(day,1):addDays(day,7);render();};$('today').onclick=()=>{day=today;render();};$('date').onchange=()=>{if($('date').value){day=$('date').value;render();}};
 $('help').onclick=()=>$('info').showModal();$('close-info').onclick=()=>$('info').close();
 $('export').onclick=()=>{const blob=new Blob([ics(selected(),data)],{type:'text/calendar;charset=utf-8'});const href=URL.createObjectURL(blob),a=document.createElement('a');a.href=href;a.download=`WF-${selection.company}kp-${selection.platoon}pl-${selection.semester}.ics`;a.click();setTimeout(()=>URL.revokeObjectURL(href),1000);};
 try{const response=await fetch('data.json');if(!response.ok)throw Error('Brak pliku danych');data=await response.json();selection.semester=options('semester',data.semesters.map(s=>({value:s.id,label:s.label})),selection.semester||'winter-2026');$('source-list').innerHTML=Object.values(data.sourceFiles).map(n=>`<p>${esc(n)}</p>`).join('');choose();if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(error){$('events').innerHTML='<div class="empty"><h3>Nie udało się wczytać planu</h3>Sprawdź połączenie i odśwież stronę.</div>';console.error(error);}

@@ -2,7 +2,7 @@
 
 Nieoficjalny plan wychowania fizycznego WAT, inspirowany sposobem korzystania z [WATplan](https://github.com/c00bie/WATplan). Osobna implementacja, bez kopiowania kodu oryginału.
 
-Wybór semestru, kompanii, plutonu i podgrupy; tygodniowy kalendarz; pełne tematy, obiekty, prowadzący i źródła; zapamiętywanie wyboru; link do wybranego dnia; eksport ICS, pamięć offline oraz opcjonalne powiadomienia push z własnymi wyprzedzeniami dla WF i zajęć instruktorsko-metodycznych.
+Wybór semestru, kompanii, plutonu i podgrupy; kalendarz tygodniowy i miesięczny; pełne tematy, obiekty, prowadzący i źródła; zapamiętywanie wyboru; link do wybranego dnia; eksport ICS, pamięć offline oraz opcjonalne powiadomienia push z własnymi wyprzedzeniami dla WF i zajęć instruktorsko-metodycznych.
 
 ## Uruchomienie
 
@@ -10,7 +10,7 @@ Wymagany Node.js 22 lub nowszy. Frontend nie wymaga instalacji zależności. Zap
 
 ```sh
 node serve.js
-node --test data.test.js map.test.js notification.test.js
+node --test data.test.js map.test.js notification.test.js calendar.test.js
 node validate.js
 ```
 
