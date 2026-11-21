@@ -10,7 +10,7 @@ Wymagany Node.js 22 lub nowszy. Frontend nie wymaga instalacji zależności. Zap
 
 ```sh
 node serve.js
-node --test data.test.js map.test.js notification.test.js calendar.test.js
+node --test data.test.js map.test.js notification.test.js calendar.test.js blocks.test.js
 node validate.js
 ```
 
@@ -23,7 +23,7 @@ Adres lokalny: http://127.0.0.1:4173. Pliki aplikacji znajdują się w katalogu 
 - 7511 wpisów dla grup z numerem plutonu i kompanii. Grupy cywilne i kursy bez numeru kompanii nie są objęte selektorem.
 - 165 opisów zajęć, pozyskanych z tabel programu (strony 12–52).
 - Kody `18/9`, `18/10`, `4/710`, `4/45`, `3/39` występują w rozkładzie, ale nie mają odpowiednika w przekazanym programie. Aplikacja zachowuje kod i pokazuje brak opisu.
-- Czas programowy jest sumą godzin dla punktu programu, a nie długością konkretnego spotkania. Źródło podaje numery bloków. Godziny uzupełnione przez użytkownika: 1–2 o 8:00, 3–4 o 9:50, 5–6 o 11:40, 7–8 o 13:30 (Warszawa). Powiadomienia korzystają z tych godzin. Eksport ICS zachowuje wpisy całodniowe, które nie blokują dostępności.
+- Czas programowy jest sumą godzin dla punktu programu, a nie długością konkretnego spotkania. Źródło podaje pary godzin dydaktycznych. Bloki 1, 2, 3, 4 odpowiadają godzinom 1–2, 3–4, 5–6, 7–8. W aplikacji pokazujemy numer bloku i początek w nawiasie: 1 (08:00), 2 (09:50), 3 (11:40), 4 (13:30), według czasu Warszawy i informacji użytkownika. Godzina rozpoczęcia bloku 5 (9–10) nie została podana. Powiadomienia korzystają z tych godzin. Eksport ICS zachowuje wpisy całodniowe, które nie blokują dostępności.
 - Oznaczenia obiektów i wskazówki pochodzą z wytycznych zimowych 2026/27. Po najechaniu, kliknięciu lub przejściu klawiaturą na nazwę miejsca otwiera się schemat z zielonym zaznaczeniem. Wspólne oznaczenia (np. K/F) zachowują wspólny punkt z przesłanego schematu; nie jest to mapa GPS.
 - Brak automatycznej synchronizacji z SWF. Nieobecność wpisu nie oznacza odwołania zajęć.
 

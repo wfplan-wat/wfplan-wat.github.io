@@ -1,6 +1,7 @@
 import {filterEvents,isMethodicalEvent,isMakeupEvent,isReplacedEvent,makeupTitle,replacementTitle} from './logic.js';
 
-export const BLOCK_STARTS={1:'08:00',3:'09:50',5:'11:40',7:'13:30'};
+import {blockStart} from './blocks.js';
+export {BLOCK_STARTS,blockStart} from './blocks.js';
 export const PLACE_LABELS={T:'TEREN',B:'BALON',B1:'BALON',B2:'BALON',B3:'BALON',H:'SWF',M:'SWF',U:'SWF',S:'SWF',G:'SWF',J:'SWF','Ż':'DRĄŻKI',P:'BASEN',L:'LTP',O:'OSF',N:'PIŁKA',K:'KOSZYKÓWKA',C:'BTS/BTZ',D:'ARCHIMEDES',A:'STADION',X:'AW4',F:'SIATKÓWKA',E:'SIŁOWNIA AW3'};
 export const defaultSettings=()=>({enabled:false,wf:{enabled:true,reminders:[{minutes:1440,enabled:true},{minutes:60,enabled:true}]},methodical:{enabled:true,reminders:[{minutes:10080,enabled:true},{minutes:2880,enabled:true},{minutes:1440,enabled:true},{minutes:60,enabled:true}]}});
 export function validateSettings(input){
@@ -14,7 +15,6 @@ export function validateSettings(input){
   })};
  }return out;
 }
-export const blockStart=e=>BLOCK_STARTS[parseInt(e.block)]||null;
 const warsaw=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Warsaw',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
 // Convert civil Warsaw time to an instant, including CET/CEST transitions.
 export function eventStart(e){
